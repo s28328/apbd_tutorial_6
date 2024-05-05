@@ -17,14 +17,14 @@ public class WarehouseRepository:IWarehouseRepository
     {
         using var con = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
         con.Open();
-        var validation = new CreateWareHouseValidation(con);
+        var validation = new AddToWareHouseValidation(con);
         if (!validation.FullValidation
             (warehouse.IdWarehouse,
                 warehouse.IdProduct,
                 warehouse.Amount,
                 warehouse.CreatedAt))
             return -1;
-        CreateWareHouseManipulation manipulation = new CreateWareHouseManipulation(con);
+        AddToWareHouseManipulation manipulation = new AddToWareHouseManipulation(con);
         manipulation.UpdateOrderFulfilled(validation.idOrder,warehouse.CreatedAt);
         return manipulation.InsertProduct_Warehouse(warehouse, validation.idOrder);
     }
@@ -52,12 +52,12 @@ public class WarehouseRepository:IWarehouseRepository
         }
     }
 
-    public class CreateWareHouseValidation
+    public class AddToWareHouseValidation
     {
         private SqlConnection _connection;
         public int? idOrder;
 
-        public CreateWareHouseValidation(SqlConnection connection)
+        public AddToWareHouseValidation(SqlConnection connection)
         {
             _connection = connection;
             idOrder = null;
@@ -134,10 +134,10 @@ public class WarehouseRepository:IWarehouseRepository
         }
     }
 
-    public class CreateWareHouseManipulation
+    public class AddToWareHouseManipulation
     {
         private SqlConnection _connection;
-        public CreateWareHouseManipulation(SqlConnection connection)
+        public AddToWareHouseManipulation(SqlConnection connection)
         {
             _connection = connection;
         }
