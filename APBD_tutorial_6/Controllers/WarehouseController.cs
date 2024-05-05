@@ -30,7 +30,7 @@ public class WarehouseController:ControllerBase
     [Route("api/AddToWarehouseProcedure")]
     public IActionResult AddToWarehouseProcedure([FromBody]Warehouse warehouse)
     {
-        var affectedCount = _warehouseService.AddToWarehouse(warehouse);
+        var affectedCount = _warehouseService.AddToWarehouseProcedure(warehouse);
         Console.WriteLine(affectedCount);
         if (affectedCount == -1)
             return new ConflictResult();
