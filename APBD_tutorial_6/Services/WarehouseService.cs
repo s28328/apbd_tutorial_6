@@ -11,12 +11,12 @@ public class WarehouseService:IWarehouseService
     {
         _warehouseRepository = warehouseRepository;
     }
-    public int AddToWarehouse(Warehouse warehouse)
+    public Task<int> AddToWarehouse(Warehouse warehouse)
     {
         return _warehouseRepository.AddToWarehouse(warehouse);
     }
 
-    public int AddToWarehouseProcedure(Warehouse warehouse)
+    public Task<int> AddToWarehouseProcedure(Warehouse warehouse)
     {
         return _warehouseRepository.AddToWarehouseProcedure(warehouse);
     }

@@ -17,9 +17,9 @@ public class WarehouseController:ControllerBase
 
     [HttpPost]
     [Route("api/AddToWarehouse")]
-    public IActionResult AddToWarehouse([FromBody]Warehouse warehouse)
+    public async Task<IActionResult> AddToWarehouse([FromBody]Warehouse warehouse)
     {
-        var affectedCount = _warehouseService.AddToWarehouse(warehouse);
+        var affectedCount = await _warehouseService.AddToWarehouse(warehouse);
         Console.WriteLine(affectedCount);
         if (affectedCount == -1)
             return new ConflictResult();
@@ -28,9 +28,9 @@ public class WarehouseController:ControllerBase
     
     [HttpPost]
     [Route("api/AddToWarehouseProcedure")]
-    public IActionResult AddToWarehouseProcedure([FromBody]Warehouse warehouse)
+    public async Task<IActionResult> AddToWarehouseProcedure([FromBody]Warehouse warehouse)
     {
-        var affectedCount = _warehouseService.AddToWarehouseProcedure(warehouse);
+        var affectedCount = await _warehouseService.AddToWarehouseProcedure(warehouse);
         Console.WriteLine(affectedCount);
         if (affectedCount == -1)
             return new ConflictResult();

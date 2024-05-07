@@ -4,6 +4,6 @@ namespace APBD_tutorial_6.Repositories;
 
 public interface IWarehouseRepository
 {
-    public int AddToWarehouse(Warehouse warehouse);
-    public int AddToWarehouseProcedure(Warehouse warehouse);
+    public Task<int> AddToWarehouse(Warehouse warehouse);
+    public Task<int> AddToWarehouseProcedure(Warehouse warehouse);
 }

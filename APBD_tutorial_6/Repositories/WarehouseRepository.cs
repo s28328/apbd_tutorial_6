@@ -13,23 +13,23 @@ public class WarehouseRepository:IWarehouseRepository
     {
         _configuration = configuration;
     }
-    public int AddToWarehouse(Warehouse warehouse)
+    public async Task<int> AddToWarehouse(Warehouse warehouse)
     {
         using var con = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
         con.Open();
         var validation = new AddToWareHouseValidation(con);
-        if (!validation.FullValidation
+        if (! await validation.FullValidation
             (warehouse.IdWarehouse,
                 warehouse.IdProduct,
                 warehouse.Amount,
                 warehouse.CreatedAt))
             return -1;
         AddToWareHouseManipulation manipulation = new AddToWareHouseManipulation(con);
-        manipulation.UpdateOrderFulfilled(validation.idOrder,warehouse.CreatedAt);
-        return manipulation.InsertProduct_Warehouse(warehouse, validation.idOrder);
+        await manipulation.UpdateOrderFulfilled(validation.idOrder,warehouse.CreatedAt);
+        return await manipulation.InsertProduct_Warehouse(warehouse, validation.idOrder);
     }
 
-    public int AddToWarehouseProcedure(Warehouse warehouse)
+    public async Task<int> AddToWarehouseProcedure(Warehouse warehouse)
     {
         try
         {
@@ -42,7 +42,7 @@ public class WarehouseRepository:IWarehouseRepository
             command.Parameters.AddWithValue("@IdWarehouse",warehouse.IdWarehouse);
             command.Parameters.AddWithValue("@Amount",warehouse.Amount);
             command.Parameters.AddWithValue("@CreatedAt",warehouse.CreatedAt);
-            string strId  = Convert.ToString( command.ExecuteScalar());
+            string? strId  = Convert.ToString( await command.ExecuteScalarAsync());
             return int.Parse(strId);
         }
         catch (SqlException e)
@@ -63,38 +63,34 @@ public class WarehouseRepository:IWarehouseRepository
             idOrder = null;
         }
 
-        public bool FullValidation(int idWarehouse, int idProduct, int amount, DateTime createdAt)
+        public async Task<bool> FullValidation(int idWarehouse, int idProduct, int amount, DateTime createdAt)
         {
-            CheckOrder(idProduct, amount, createdAt);
-            return IsWarehouse(idWarehouse) &&
-                   IsProduct(idProduct) &&
+            await CheckOrder(idProduct, amount, createdAt);
+            return await IsWarehouse(idWarehouse) &&
+                   await IsProduct(idProduct) &&
                    IsValidAmount(amount) &&
                    IsOrder() &&
-                   IsNotReleased();
+                   await IsNotReleased();
         }
 
-        private bool IsWarehouse(int id)
+        private async Task<bool> IsWarehouse(int id)
         {
             using var cmd = new SqlCommand();
             cmd.Connection = _connection;
             cmd.CommandText = "SELECT 1 FROM Warehouse where IdWarehouse = @idWarehouse";
             cmd.Parameters.AddWithValue("@idWarehouse", id);
-            using (var dr = cmd.ExecuteReader())
-            {
-                return dr.HasRows;
-            }
+            await using var dr = await cmd.ExecuteReaderAsync();
+            return dr.HasRows;
         }
 
-        private bool IsProduct(int id)
+        private async Task<bool> IsProduct(int id)
         {
             using var cmd = new SqlCommand();
             cmd.Connection = _connection;
             cmd.CommandText = "SELECT 1 FROM Product where IdProduct = @idProduct";
             cmd.Parameters.AddWithValue("@idProduct", id);
-            using (var dr = cmd.ExecuteReader())
-            {
-                return dr.HasRows;
-            }
+            await using var dr = await cmd.ExecuteReaderAsync();
+            return dr.HasRows;
         }
 
         private bool IsValidAmount(int amount)
@@ -102,7 +98,7 @@ public class WarehouseRepository:IWarehouseRepository
             return amount > 0;
         }
 
-        private void CheckOrder(int idProduct, int amount, DateTime whCreatedAt)
+        private async Task CheckOrder(int idProduct, int amount, DateTime whCreatedAt)
         {
             using var cmd = new SqlCommand();
             cmd.Connection = _connection;
@@ -113,7 +109,7 @@ public class WarehouseRepository:IWarehouseRepository
             cmd.Parameters.AddWithValue("@IdProduct", idProduct);
             cmd.Parameters.AddWithValue("@Amount", amount);
             cmd.Parameters.AddWithValue("@CreatedAt",whCreatedAt);
-            this.idOrder = (int?)cmd.ExecuteScalar();
+            this.idOrder = (int?) await cmd.ExecuteScalarAsync();
         }
 
         private bool IsOrder()
@@ -121,16 +117,14 @@ public class WarehouseRepository:IWarehouseRepository
             return this.idOrder != null;
         }
 
-        private bool IsNotReleased()
+        private async Task<bool> IsNotReleased()
         {
             using var cmd = new SqlCommand();
             cmd.Connection = _connection;
             cmd.CommandText = "SELECT 1 FROM Product_Warehouse where IdOrder = @idOrder";
             cmd.Parameters.AddWithValue("@idOrder", this.idOrder);
-            using (var dr = cmd.ExecuteReader())
-            {
-                return !dr.HasRows;
-            }
+            await using var dr = await cmd.ExecuteReaderAsync();
+            return !dr.HasRows;
         }
     }
 
@@ -142,24 +136,24 @@ public class WarehouseRepository:IWarehouseRepository
             _connection = connection;
         }
 
-        public void UpdateOrderFulfilled(int? idOrder,DateTime createdAt)
+        public async Task UpdateOrderFulfilled(int? idOrder,DateTime createdAt)
         {
             using var cmd = new SqlCommand();
             cmd.Connection = _connection;
             cmd.CommandText = "UPDATE \"Order\" SET FulfilledAt=@CreatedAt  WHERE IdOrder=@IdOrder;";
             cmd.Parameters.AddWithValue("@CreatedAt", createdAt);
             cmd.Parameters.AddWithValue("@IdOrder", idOrder);
-            cmd.ExecuteNonQuery();
+            await cmd.ExecuteNonQueryAsync();
         }
 
-        public int InsertProduct_Warehouse(Warehouse warehouse, int? idOrder)
+        public async Task<int> InsertProduct_Warehouse(Warehouse warehouse, int? idOrder)
         {
             using var cmd = new SqlCommand();
             Decimal price;
             cmd.Connection = _connection;
             cmd.CommandText = "SELECT Price FROM Product WHERE IdProduct=@IdProduct";
             cmd.Parameters.AddWithValue("@IdProduct", warehouse.IdProduct);
-            using (var dr = cmd.ExecuteReader())
+            await using (var dr = await cmd.ExecuteReaderAsync())
             {
                 dr.Read();
                 price = dr.GetDecimal(0);
@@ -174,7 +168,7 @@ public class WarehouseRepository:IWarehouseRepository
             cmdInsert.Parameters.AddWithValue("@Amount", warehouse.Amount);
             cmdInsert.Parameters.AddWithValue("@Price", price);
             cmdInsert.Parameters.AddWithValue("@CreatedAt", warehouse.CreatedAt);
-            string strId  = Convert.ToString( cmdInsert.ExecuteScalar());
+            string? strId  = Convert.ToString( await  cmdInsert.ExecuteScalarAsync());
             return int.Parse(strId);
         }
     }
